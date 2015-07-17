@@ -9,7 +9,15 @@ class KeywordMap(redis.StrictRedis):
         host = config.get('redis', 'host')
         port = config.getint('redis', 'port')
         db_index = config.getint('redis', 'db_index')
-        super(KeywordMap, self).__init__(host=host, port=port, db=db_index)
+        self.__prefix = config.get('redis', 'prefix')
+        self.__super = super(KeywordMap, self)
+        self.__super.__init__(host=host, port=port, db=db_index)
+
+    def set(self, key, value):
+        return self.__super.set(self.__prefix + key, value)
+
+    def get(self, key):
+        return self.__super.get(self.__prefix + key)
 
 
 if __name__ == '__main__':

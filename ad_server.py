@@ -121,6 +121,7 @@ class ADHandler(tornado.web.RequestHandler):
             2   内部错误
             3   YDN 返回结果非法
             4   qps 禁止
+            5   用户达到每日上限
     '''
 
     __ydn_host = config.get('ydn', 'host')
@@ -131,10 +132,10 @@ class ADHandler(tornado.web.RequestHandler):
     __source_token = config.get('ydn', 'source_token')
     __android_append = config.get('ydn', 'android_append')
     __ios_append = config.get('ydn', 'ios_append')
-    __qps_timeout = config.getint('ad_server', 'qps_timeout') / 1000.0
-    __qps_server_addr = (
-        config.get('ad_server', 'qps_server_host'),
-        config.getint('ad_server', 'qps_server_port'),
+    __limit_timeout = config.getint('ad_server', 'limit_timeout') / 1000.0
+    __limit_server_addr = (
+        config.get('ad_server', 'limit_server_host'),
+        config.getint('ad_server', 'limit_server_port'),
     )
 
     def get(self):
@@ -144,11 +145,13 @@ class ADHandler(tornado.web.RequestHandler):
             cid: Yahoo 提供的 Categroy ID
             limit: 返回广告条目数. 默认为 1, 最大为 10.
             os: 请求的客户端系统信息. Android 为 1, iOS 为 2.
+            userid: 唯一标识用户的 ID
         '''
         global ad_logger
 
         # 请求的 Category ID
         category_id = self.get_argument('cid', None)
+        userid = self.get_argument('uid', None)
         # 请求的广告数目. 最大值为10, 默认值为 1
         limit = self.get_argument('lmt', self.__class__.__default_limit)
         limit = int(limit)
@@ -163,11 +166,15 @@ class ADHandler(tornado.web.RequestHandler):
         errno = 0  # 错误码
         msg = ''  # 错误信息
         ad_data = None  # 广告数据
-        if None is category_id:  # 非法请求
+        if None is category_id or None is userid:  # 非法请求
             msg = 'invalid request'
             errno = 1
         else:
-            if self.__qps_permit():
+            ret = self.__limit_permit(userid)
+            if ret == 0:  # 不可访问
+                errno = 4
+                msg = 'qps forbid'
+            elif ret == 1:  # 可以访问
                 try:
                     ad_data = self.__request_ydn(category_id, limit, os)
                 except Exception as e:
@@ -180,13 +187,16 @@ class ADHandler(tornado.web.RequestHandler):
                     else:
                         msg = 'invalid response'
                         errno = 3
+            elif ret == 2:  # 用户达到上限
+                errno = 5
+                msg = 'user limit'
             else:
-                errno = 4
-                msg = 'qps forbid'
+                errno = 2
+                msg = 'unknown error'
 
         # 每次请求都会记一条日志
-        log_string = 'ip={}, cid={}, lmt={}, os={}, errno={}, msg={}, rt={:.3f}, ua={}'.format(
-            self.request.remote_ip, category_id, limit, os, errno,
+        log_string = 'ip={}, uid={}, cid={}, lmt={}, os={}, errno={}, msg={}, rt={:.3f}, ua={}'.format(
+            self.request.remote_ip, userid, category_id, limit, os, errno,
             msg, 1000.0 * self.request.request_time(),
             self.request.headers.get('User-Agent', None)
         )
@@ -290,22 +300,19 @@ class ADHandler(tornado.web.RequestHandler):
         feedback = root[1][-1][0].text
         return {'ads': ad_data, 'feedback': feedback}
 
-    def __qps_permit(self):
+    def __limit_permit(self, userid):
         # 从 ms 变 s
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.settimeout(self.__class__.__qps_timeout)
-        # 随便发点什么都行
+        sock.settimeout(self.__class__.__limit_timeout)
+        # 发送用户 id
         try:
-            sock.sendto('R', self.__class__.__qps_server_addr)
+            sock.sendto(userid, self.__class__.__limit_server_addr)
             data, addr = sock.recvfrom(1024)
         except Exception as e:
             ad_logger.error('info={}'.format(str(e)))
-            return False
+            return 0
 
-        if data == '1':
-            return True
-        else:
-            return False
+        return int(data)
 
 
 class CategoryHandler(tornado.web.RequestHandler):
