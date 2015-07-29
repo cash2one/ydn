@@ -9,19 +9,21 @@
 '''
 import socket
 import threading
-import ConfigParser
 import collections
 import datetime
 import os
 
+import libs
+
+
 
 class LimitServer(object):
 
-    def __init__(self, config_file):
+    def __init__(self):
         self.__count = None
         self.__uid_dict = collections.defaultdict(lambda: 0)
-        self.__config_file = config_file
-        self.__config_mtime = os.path.getmtime(config_file)
+        self.__config_file = libs.get_config_file()
+        self.__config_mtime = os.path.getmtime(self.__config_file)
 
         self.__load_config()
         self.__init_listener(self.__port)
@@ -29,9 +31,7 @@ class LimitServer(object):
     def __load_config(self):
         '''读取配置文件并完成所有配置
         '''
-        config = ConfigParser.ConfigParser()
-        config.read(self.__config_file)
-
+        config = libs.get_config()
         self.__qps = config.getint("limit_server", "qps")
         self.__qpd = config.getint("limit_server", "qpd")
         self.__max_user = config.getint("limit_server", "max_user")
@@ -56,7 +56,10 @@ class LimitServer(object):
         mtime = os.path.getmtime(self.__config_file)
         if mtime != self.__config_mtime:
             try:
+                libs.reload_config()
                 self.__load_config()
+                logger = libs.get_logger()
+                logger.warning('config file changed')
             except Exception as e:
                 pass
             self.__config_mtime = mtime
@@ -115,5 +118,5 @@ class LimitServer(object):
 
 
 if __name__ == '__main__':
-    limit_server = LimitServer('conf/server.cfg')
+    limit_server = LimitServer()
     limit_server.run()

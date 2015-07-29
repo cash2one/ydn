@@ -13,3 +13,6 @@ function kill_process
 
 kill_process ad_server.py
 kill_process limit_server.py
+
+echo "All severs have been stoped!"
+echo "Please check it yourself"

@@ -26,46 +26,18 @@ import tornado.httpserver
 import requests
 import ujson
 import lxml.etree
-import logging
-import logging.config
 import os
-import ConfigParser
 import sys
 import socket
 
 from keyword_map import KeywordMap
+import libs
 
 
 OS_ANDROID = 1
 OS_IOS = 2
-
-
-def __init_config(config_file='conf/server.cfg'):
-    if len(sys.argv) > 1:
-        config_file = sys.argv[1]
-
-    config = ConfigParser.ConfigParser()
-    config.read(config_file)
-
-    return config
-
-
-config = __init_config()
-
-
-def __init_logger():
-    # 初始化日志
-    log_file = config.get('log', 'config_file')
-    path = config.get('log', 'dir')
-    # 如果目录不存在就建立
-    if not os.path.exists(path):
-        os.mkdir(path)
-    logging.config.fileConfig(log_file)
-
-
-__init_logger()
-ad_logger = logging.getLogger('ad')
-cid_logger = logging.getLogger('cid')
+ad_logger = libs.get_logger('ad')
+cid_logger = libs.get_logger('cid')
 
 
 def compose_ret(errno, data=None):
@@ -124,12 +96,15 @@ class ADHandler(tornado.web.RequestHandler):
             5   用户达到每日上限
     '''
 
+    config = libs.get_config()
     __ydn_host = config.get('ydn', 'host')
     __max_limit = config.getint('ydn', 'max_limit')
     __default_limit = config.getint('ydn', 'default_limit')
     __app_url = config.get('ydn', 'app_url')
     __encode = config.get('ydn', 'encode')
-    __source_token = config.get('ydn', 'source_token')
+    __source_token_ios = config.get('ydn', 'source_token_ios')
+    __source_token_android = config.get('ydn', 'source_token_android')
+    __source_token_test = config.get('ydn', 'source_token_test')
     __android_append = config.get('ydn', 'android_append')
     __ios_append = config.get('ydn', 'ios_append')
     __limit_timeout = config.getint('ad_server', 'limit_timeout') / 1000.0
@@ -194,7 +169,6 @@ class ADHandler(tornado.web.RequestHandler):
             else:
                 errno = 2
                 msg = 'unknown error'
-        print "aaa"
 
         # 每次请求都会记一条日志
         title, desc, url = None, None, None
@@ -203,10 +177,9 @@ class ADHandler(tornado.web.RequestHandler):
             desc = ad_data["ads"][0]["description"].encode("utf-8")
             url = ad_data["ads"][0]["url"]
 
-        print "ass"
         log_string = ('ip={ip}, uid={uid}, sid={sid}, cid={cid}, lmt={lmt}, '
             'os={os}, errno={errno}, msg={msg}, rt={rt:.3f}, ua={ua}, '
-            'tit={tit}, desc={desc}, url={url}').format(
+            'tit={tit}, desc={desc}').format(
                 ip=self.request.remote_ip,
                 uid=user_id,
                 sid=session_id,
@@ -219,9 +192,7 @@ class ADHandler(tornado.web.RequestHandler):
                 ua=self.request.headers.get('User-Agent', None),
                 tit=title,
                 desc=desc,
-                url=url,
         )
-        print log_string
         ad_logger.info(log_string)
 
         # 返回结果
@@ -269,10 +240,13 @@ class ADHandler(tornado.web.RequestHandler):
 
         # 依据系统判断添加在后面的附加信息
         append = None
+        source_token = None
         if os == OS_ANDROID:
             append = self.__class__.__android_append
+            source_token = self.__class__.__source_token_android
         elif os == OS_IOS:
             append = self.__class__.__ios_append
+            source_token = self.__class__.__source_token_ios
         else:
             # 因为前面已经处理过, 所以不会进入这个分支
             return
@@ -280,7 +254,7 @@ class ADHandler(tornado.web.RequestHandler):
 
         # 生成请求参数
         params = {
-            'source': self.__class__.__source_token,
+            'source': source_token,
             'ctxtUrl': self.__class__.__app_url,
             'outputCharEnc': self.__class__.__encode,
             'affilData': affilData,
@@ -339,7 +313,7 @@ class ADHandler(tornado.web.RequestHandler):
 
 class CategoryHandler(tornado.web.RequestHandler):
 
-    __keyword_map = KeywordMap(config)
+    __keyword_map = KeywordMap()
 
     def __get_cid(self, keyword):
         '''依据输入的关键词返回映射的 Categroy ID.
@@ -415,14 +389,13 @@ class CategoryHandler(tornado.web.RequestHandler):
 def run_server():
     '''初始化服务器
     '''
-    global config
-
     # 仅 2 个 URI
     application = tornado.web.Application([
         (r"/ad", ADHandler),
         (r"/cid", CategoryHandler),
     ])
 
+    config = libs.get_config()
     port = config.getint('ad_server', 'port')
     server = tornado.httpserver.HTTPServer(application)
     server.bind(port)
