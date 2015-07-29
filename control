@@ -1,0 +1,54 @@
+#!/bin/bash
+
+function start
+{
+    ROOT=${PWD}/`dirname $0`/..
+    SRC_PATH=${ROOT}/src
+    PYTHON=python
+
+    cd ${SRC_PATH}
+    nohup ${PYTHON} limit_server.py > /dev/null &
+    nohup ${PYTHON} ad_server.py > /dev/null &
+
+    echo "All servers have been started!"
+    echo "Please check it yourself"
+}
+
+function kill_process
+{
+    p_name=${1}
+    pid_list=`ps -ef | grep ${p_name} | awk '{print $2}'`
+    echo ${pid_list}
+    for pid in ${pid_list}
+    do
+        kill ${pid}
+    done
+}
+
+function stop
+{
+    kill_process ad_server.py
+    kill_process limit_server.py
+
+    echo "All severs have been stoped!"
+    echo "Please check it yourself"
+}
+
+function usage
+{
+    echo "$0 [OPTION]"
+    echo "OPTION:"
+    echo "    start: Start all servers"
+    echo "    stop: Stop all servers"
+}
+
+option=$1
+
+case $option in
+    start|stop)
+        $option
+        ;;
+    *)
+        usage
+        exit
+esac

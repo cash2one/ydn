@@ -16,7 +16,6 @@ import os
 import libs
 
 
-
 class LimitServer(object):
 
     def __init__(self):
@@ -88,7 +87,7 @@ class LimitServer(object):
         # 1 天计时器循环
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=9)
         tomorrow = now.replace(now.year, now.month, now.day, 0, 0, 0, 0) + \
-                datetime.timedelta(days=1)
+            datetime.timedelta(days=1)
         time_delta = (tomorrow - now).total_seconds()
         self.__1d_timer = threading.Timer(time_delta, self.__1d_loop)
         self.__1d_timer.start()

@@ -30,6 +30,8 @@ class CategoryHandler(tornado.web.RequestHandler):
 
         参数:
             keyword: 关键词 (发音)
+            session_id: Session 号, 用来串数据
+            user_id: 用户 ID
 
         返回:
             返回 JSON, 格式如下:
@@ -49,11 +51,12 @@ class CategoryHandler(tornado.web.RequestHandler):
         # keyword
         keyword = self.get_argument('kw', None)
         session_id = self.get_argument('sid', None)
+        user_id = self.get_argument('uid', None)
 
         errno = 0
         msg = None
         data = None
-        if keyword is None or session_id is None:
+        if None in (keyword, session_id, user_id):
             errno = 1
             msg = 'invalid params'
             data = msg
@@ -73,9 +76,15 @@ class CategoryHandler(tornado.web.RequestHandler):
                     msg = cid
                     data = {'cid': cid}
 
-        log_string = 'ip={}, kw={}, sid={}, errno={}, msg={}, rt={:.3f}'.format(
-            self.request.remote_ip, keyword.encode("utf-8"), session_id, errno,
-            msg, 1000.0 * self.request.request_time(),
+        log_string = ('ip={ip}, kw={kw}, uid={uid}, sid={sid}, errno={errno}, '
+                      'msg={msg}, rt={rt:.3f}').format(
+            ip=self.request.remote_ip,
+            kw=keyword.encode("utf-8"),
+            uid=user_id,
+            sid=session_id,
+            errno=errno,
+            msg=msg,
+            rt=1000.0 * self.request.request_time(),
         )
 
         cid_logger.info(log_string)

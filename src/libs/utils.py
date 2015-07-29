@@ -2,6 +2,7 @@
 # -*- encoding: UTF-8 -*-
 import ujson
 
+
 def compose_ret(errno, data=None):
     '''组成返回结果
 
@@ -14,5 +15,3 @@ def compose_ret(errno, data=None):
     '''
     ret = {'errno': errno, 'data': data}
     return ujson.dumps(ret)
-
-
