@@ -36,4 +36,4 @@ if __name__ == '__main__':
     for line in sys.stdin:
         line = line.strip()
         key, value = line.split("\t")
-        print km.set(key, 'int_cat_40150110160')
+        print km.set(key, value)

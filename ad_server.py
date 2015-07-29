@@ -145,13 +145,14 @@ class ADHandler(tornado.web.RequestHandler):
             cid: Yahoo 提供的 Categroy ID
             limit: 返回广告条目数. 默认为 1, 最大为 10.
             os: 请求的客户端系统信息. Android 为 1, iOS 为 2.
-            userid: 唯一标识用户的 ID
+            user_id: 唯一标识用户的 ID
         '''
         global ad_logger
 
         # 请求的 Category ID
         category_id = self.get_argument('cid', None)
-        userid = self.get_argument('uid', None)
+        user_id = self.get_argument('uid', None)
+        session_id = self.get_argument('sid', None)
         # 请求的广告数目. 最大值为10, 默认值为 1
         limit = self.get_argument('lmt', self.__class__.__default_limit)
         limit = int(limit)
@@ -166,11 +167,11 @@ class ADHandler(tornado.web.RequestHandler):
         errno = 0  # 错误码
         msg = ''  # 错误信息
         ad_data = None  # 广告数据
-        if None is category_id or None is userid:  # 非法请求
+        if None in (category_id, user_id, session_id):  # 非法请求
             msg = 'invalid request'
             errno = 1
         else:
-            ret = self.__limit_permit(userid)
+            ret = self.__limit_permit(user_id)
             if ret == 0:  # 不可访问
                 errno = 4
                 msg = 'qps forbid'
@@ -193,13 +194,34 @@ class ADHandler(tornado.web.RequestHandler):
             else:
                 errno = 2
                 msg = 'unknown error'
+        print "aaa"
 
         # 每次请求都会记一条日志
-        log_string = 'ip={}, uid={}, cid={}, lmt={}, os={}, errno={}, msg={}, rt={:.3f}, ua={}'.format(
-            self.request.remote_ip, userid, category_id, limit, os, errno,
-            msg, 1000.0 * self.request.request_time(),
-            self.request.headers.get('User-Agent', None)
+        title, desc, url = None, None, None
+        if errno == 0:
+            title = ad_data["ads"][0]["title"].encode("utf-8")
+            desc = ad_data["ads"][0]["description"].encode("utf-8")
+            url = ad_data["ads"][0]["url"]
+
+        print "ass"
+        log_string = ('ip={ip}, uid={uid}, sid={sid}, cid={cid}, lmt={lmt}, '
+            'os={os}, errno={errno}, msg={msg}, rt={rt:.3f}, ua={ua}, '
+            'tit={tit}, desc={desc}, url={url}').format(
+                ip=self.request.remote_ip,
+                uid=user_id,
+                sid=session_id,
+                cid=category_id,
+                lmt=limit,
+                os=os,
+                errno=errno,
+                msg=msg,
+                rt=1000.0 * self.request.request_time(),
+                ua=self.request.headers.get('User-Agent', None),
+                tit=title,
+                desc=desc,
+                url=url,
         )
+        print log_string
         ad_logger.info(log_string)
 
         # 返回结果
@@ -300,13 +322,13 @@ class ADHandler(tornado.web.RequestHandler):
         feedback = root[1][-1][0].text
         return {'ads': ad_data, 'feedback': feedback}
 
-    def __limit_permit(self, userid):
+    def __limit_permit(self, user_id):
         # 从 ms 变 s
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.settimeout(self.__class__.__limit_timeout)
         # 发送用户 id
         try:
-            sock.sendto(userid, self.__class__.__limit_server_addr)
+            sock.sendto(user_id, self.__class__.__limit_server_addr)
             data, addr = sock.recvfrom(1024)
         except Exception as e:
             ad_logger.error('info={}'.format(str(e)))
@@ -355,27 +377,33 @@ class CategoryHandler(tornado.web.RequestHandler):
 
         # keyword
         keyword = self.get_argument('kw', None)
+        session_id = self.get_argument('sid', None)
 
         errno = 0
         msg = None
         data = None
-        if keyword is None:
+        if keyword is None or session_id is None:
             errno = 1
             msg = 'invalid params'
             data = msg
         else:
-            cid = self.__get_cid(keyword)
-            if cid is None:
+            try:
+                cid = self.__get_cid(keyword)
+            except Exception as e:
                 errno = 2
-                msg = 'no category'
-                data = msg
+                msg = str(e)
             else:
-                errno = 0
-                msg = cid
-                data = {'cid': cid}
+                if cid is None:
+                    errno = 2
+                    msg = 'no category'
+                    data = msg
+                else:
+                    errno = 0
+                    msg = cid
+                    data = {'cid': cid}
 
-        log_string = 'ip={}, kw={}, errno={}, msg={}, rt={:.3f}'.format(
-            self.request.remote_ip, keyword.encode("utf-8"), errno,
+        log_string = 'ip={}, kw={}, sid={}, errno={}, msg={}, rt={:.3f}'.format(
+            self.request.remote_ip, keyword.encode("utf-8"), session_id, errno,
             msg, 1000.0 * self.request.request_time(),
         )
 
