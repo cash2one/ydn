@@ -35,15 +35,13 @@ def parse_xml(text):
         desc = listing.attrib.get('description', None)
         title = listing.attrib.get('title', None)
         rank = listing.attrib.get('rank', None)
-        try:
-            rank = int(rank)
-        except ValueError:
-            pass
+        sitehost = listing.attrib.get('siteHost', None)
         ad_data.append({
             'title': title,
             'description': desc,
             'rank': rank,
             'url': url,
+            'sitehost': sitehost,
         })
     feedback = root[1][-1][0].text
     return {'ads': ad_data, 'feedback': feedback}
@@ -77,6 +75,7 @@ def request(ip, ua, category_id, limit, os):
                 'title': 标题
                 'description': 描述
                 'url': 广告的链接
+                'sitehost': 广告连接的网址
             },
             { ... },
             { ... },
@@ -115,5 +114,6 @@ def request(ip, ua, category_id, limit, os):
         raise Exception(info)
 
     text = response.text.encode("utf-8")
+    print text
     ad_data = parse_xml(text)
     return ad_data

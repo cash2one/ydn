@@ -27,6 +27,7 @@ import tornado.httpserver
 import libs
 import ad_handler
 import cid_handler
+import trace_handler
 
 
 def run_server():
@@ -36,6 +37,7 @@ def run_server():
     application = tornado.web.Application([
         (r"/ad", ad_handler.ADHandler),
         (r"/cid", cid_handler.CategoryHandler),
+        (r"/tr", trace_handler.TraceHandler),
     ])
 
     config = libs.get_config()

@@ -11,6 +11,15 @@ has_inited = False
 __all__ = ['get_logger']
 
 
+def __init_file_handler(log_path, name):
+    filename = os.path.join(log_path, conf.get('log', name + '_file'))
+    file_handler = logging.FileHandler(filename, 'a')
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(formatter)
+    logger = logging.getLogger(name)
+    logger.addHandler(file_handler)
+    logger.setLevel(logging.INFO)
+
 def __init_logger(log_path):
     global conf
 
@@ -36,6 +45,14 @@ def __init_logger(log_path):
     cid_logger = logging.getLogger('cid')
     cid_logger.addHandler(cid_file_handler)
     cid_logger.setLevel(logging.INFO)
+    # trace
+    trace_filename = os.path.join(log_path, conf.get('log', 'trace_file'))
+    trace_file_handler = logging.FileHandler(trace_filename, 'a')
+    trace_file_handler.setLevel(logging.INFO)
+    trace_file_handler.setFormatter(formatter)
+    trace_logger = logging.getLogger('trace')
+    trace_logger.addHandler(trace_file_handler)
+    trace_logger.setLevel(logging.INFO)
     # root
     root_filename = os.path.join(log_path, conf.get('log', 'root_file'))
     root_file_handler = logging.FileHandler(root_filename, 'a')
