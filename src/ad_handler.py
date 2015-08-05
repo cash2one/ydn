@@ -103,7 +103,7 @@ class ADHandler(tornado.web.RequestHandler):
                 try:
                     ad_data = ydn.request(ip, ua, category_id, limit, os)
                 except Exception as e:
-                    errno = 2
+                    errno = 3
                     msg = str(e)
                 else:
                     if ad_data:

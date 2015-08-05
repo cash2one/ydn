@@ -114,6 +114,5 @@ def request(ip, ua, category_id, limit, os):
         raise Exception(info)
 
     text = response.text.encode("utf-8")
-    print text
     ad_data = parse_xml(text)
     return ad_data
