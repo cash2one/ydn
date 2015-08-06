@@ -50,6 +50,7 @@ class ADHandler(tornado.web.RequestHandler):
             3   YDN 返回结果非法
             4   qps 禁止
             5   用户达到每日上限
+            6   达到用户流量控制上限
     '''
 
     config = libs.get_config()
@@ -115,6 +116,9 @@ class ADHandler(tornado.web.RequestHandler):
             elif ret == 2:  # 用户达到上限
                 errno = 5
                 msg = 'user limit'
+            elif ret == 3:  # 达到用户流量上限
+                errno = 6
+                msg = 'user stream limit'
             else:
                 errno = 2
                 msg = 'unknown error'
