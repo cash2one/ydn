@@ -7,11 +7,11 @@ import libs
 class KeywordMap(redis.StrictRedis):
 
     def __init__(self):
-        config = libs.get_config()
-        host = config.get('redis', 'host')
-        port = config.getint('redis', 'port')
-        db_index = config.getint('redis', 'db_index')
-        self.__prefix = config.get('redis', 'prefix')
+        conf = libs.get_config()
+        host = conf.get('redis', 'host')
+        port = conf.getint('redis', 'port')
+        db_index = conf.getint('redis', 'db_index')
+        self.__prefix = conf.get('redis', 'prefix')
         self.__super = super(KeywordMap, self)
         self.__super.__init__(host=host, port=port, db=db_index)
 
@@ -23,9 +23,9 @@ class KeywordMap(redis.StrictRedis):
 
 
 if __name__ == '__main__':
-    config = libs.get_config()
-    km = KeywordMap(config)
+    conf = libs.get_config()
+    km = KeywordMap()
     for line in sys.stdin:
         line = line.strip()
         key, value = line.split("\t")
-        print km.set(key, value)
+        print key, value, km.set(key, value)

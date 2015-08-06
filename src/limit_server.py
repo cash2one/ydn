@@ -5,6 +5,7 @@
     '0': 不能访问
     '1': 可以访问
     '2': 用户访问次数达到上限
+    '3': 达到用户访问流量上限
     超时: 不能访问
 '''
 import socket
@@ -97,16 +98,19 @@ class LimitServer(object):
         '''
         while 1:
             uid, addr = self.__listener.recvfrom(1024)
-            if self.__uid_dict[uid] < self.__qpd:
-                if self.__count:
-                    # 先减少后返回, 保证实际 qps 小于等于设定值
-                    self.__count -= 1
-                    self.__uid_dict[uid] += 1
-                    self.__listener.sendto('1', addr)  # 可以访问
+            if len(self.__uid_dict) <= self.__max_user:
+                if self.__uid_dict[uid] < self.__qpd:
+                    if self.__count:
+                        # 先减少后返回, 保证实际 qps 小于等于设定值
+                        self.__count -= 1
+                        self.__uid_dict[uid] += 1
+                        self.__listener.sendto('1', addr)  # 可以访问
+                    else:
+                        self.__listener.sendto('0', addr)  # 不可访问
                 else:
-                    self.__listener.sendto('0', addr)  # 不可访问
+                    self.__listener.sendto('2', addr)  # 用户达到上限
             else:
-                self.__listener.sendto('2', addr)  # 用户达到上限
+                self.__listener.sendto('3', addr)  # 达到用户流量控制上限
 
     def run(self):
         '''开启的入口
