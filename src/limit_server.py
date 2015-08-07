@@ -98,7 +98,8 @@ class LimitServer(object):
         '''
         while 1:
             uid, addr = self.__listener.recvfrom(1024)
-            if len(self.__uid_dict) <= self.__max_user:
+            if int(uid not in self.__uid_dict) + \
+                    len(self.__uid_dict) <= self.__max_user:
                 if self.__uid_dict[uid] < self.__qpd:
                     if self.__count:
                         # 先减少后返回, 保证实际 qps 小于等于设定值
