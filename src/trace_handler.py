@@ -9,6 +9,7 @@ import ydn
 
 trace_logger = libs.get_logger('trace')
 
+EVENT_DISPLAY = "0"
 EVENT_CLICK_AD = "1"
 
 
@@ -43,9 +44,9 @@ class TraceHandler(tornado.web.RequestHandler):
                 ip=self.request.remote_ip,
             )
         else:
-            # 用户是否点击了广告
+            # 用户是否展示/点击了广告
             # value 表示 session ID
-            if EVENT_CLICK_AD == event_id:
+            if event_id in (EVENT_DISPLAY, EVENT_CLICK_AD):
                 log_string = 'errno={errno}, eid={eid}, uid={uid}, sid={sid}'.format(
                     errno=errno,
                     eid=event_id,
