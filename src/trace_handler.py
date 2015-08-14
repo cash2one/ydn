@@ -38,7 +38,7 @@ class TraceHandler(tornado.web.RequestHandler):
         log_string = None
         if None in (event_id, user_id, value):
             errno = 1
-            log_string = 'errno={errno}, ip={ip}, uid={uid}'.format(
+            log_string = 'errno={errno}\tip={ip}\tuid={uid}'.format(
                 errno=errno,
                 uid=user_id,
                 ip=self.request.remote_ip,
@@ -47,7 +47,7 @@ class TraceHandler(tornado.web.RequestHandler):
             # 用户是否展示/点击了广告
             # value 表示 session ID
             if event_id in (EVENT_DISPLAY, EVENT_CLICK_AD):
-                log_string = 'errno={errno}, eid={eid}, uid={uid}, sid={sid}'.format(
+                log_string = 'errno={errno}\teid={eid}\tuid={uid}\tsid={sid}'.format(
                     errno=errno,
                     eid=event_id,
                     uid=user_id,
@@ -55,7 +55,7 @@ class TraceHandler(tornado.web.RequestHandler):
                 )
             else:
                 errno = 2
-                log_string = 'errno={errno}, ip={ip}, uid={uid}'.format(
+                log_string = 'errno={errno}\tip={ip}\tuid={uid}'.format(
                     errno=errno,
                     uid=user_id,
                     ip=self.request.remote_ip,

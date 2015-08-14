@@ -76,8 +76,8 @@ class CategoryHandler(tornado.web.RequestHandler):
                     msg = cid
                     data = {'cid': cid}
 
-        log_string = ('ip={ip}, kw={kw}, uid={uid}, sid={sid}, errno={errno}, '
-                      'msg={msg}, rt={rt:.3f}').format(
+        log_string = ('ip={ip}\tkw={kw}\tuid={uid}\tsid={sid}\terrno={errno}\t'
+                      'msg={msg}\trt={rt:.3f}').format(
             ip=self.request.remote_ip,
             kw=keyword.encode("utf-8"),
             uid=user_id,

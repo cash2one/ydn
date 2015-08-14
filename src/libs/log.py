@@ -23,7 +23,7 @@ def __init_file_handler(log_path, name):
 def __init_logger(log_path):
     global conf
 
-    fmt = '%(levelname)s %(asctime)s %(filename)s|%(lineno)d %(message)s'
+    fmt = '%(levelname)s %(asctime)s %(filename)s|%(lineno)d\t%(message)s'
     formatter = logging.Formatter(fmt)
     # requests
     requests_name = 'requests.packages.urllib3.connectionpool'

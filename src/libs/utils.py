@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # -*- encoding: UTF-8 -*-
-import ujson
+try:
+    import ujson as json
+except:
+    import json
 
 
 def compose_ret(errno, data=None):
@@ -14,4 +17,4 @@ def compose_ret(errno, data=None):
         返回编码好的 json 字符串.
     '''
     ret = {'errno': errno, 'data': data}
-    return ujson.dumps(ret)
+    return json.dumps(ret)

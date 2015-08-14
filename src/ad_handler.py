@@ -130,9 +130,9 @@ class ADHandler(tornado.web.RequestHandler):
             desc = ad_data["ads"][0]["description"].encode("utf-8")
             url = ad_data["ads"][0]["url"]
 
-        log_string = ('ip={ip}, uid={uid}, sid={sid}, cid={cid}, lmt={lmt}, '
-                      'os={os}, errno={errno}, msg={msg}, rt={rt:.3f}, '
-                      'ua={ua}, tit={tit}, desc={desc}').format(
+        log_string = ('ip={ip}\tuid={uid}\tsid={sid}\tcid={cid}\tlmt={lmt}\t'
+                      'os={os}\terrno={errno}\tmsg={msg}\trt={rt:.3f}\t'
+                      'ua={ua}\ttit={tit}\tdesc={desc}').format(
                 ip=ip,
                 uid=user_id,
                 sid=session_id,
