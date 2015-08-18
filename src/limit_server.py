@@ -2,8 +2,8 @@
 # -*- encoding: UTF-8 -*-
 '''
 使用 UDP 协议来控制 qps, 客户端可以获取到的结果有:
-    '0': 不能访问
-    '1': 可以访问
+    '0': 可以访问
+    '1': 每秒限制不能访问
     '2': 用户访问次数达到上限
     '3': 达到用户访问流量上限
     超时: 不能访问
@@ -73,7 +73,7 @@ class LimitServer(object):
         # 如果配置文件发生了改变则重新初始化各参数
         self.__update_config()
         # qps 限制
-        self.__count = self.__qps
+        self.__count = 0
 
         # 1 秒计时器循环
         self.__1s_timer = threading.Timer(1.0, self.__1s_loop)
@@ -98,20 +98,27 @@ class LimitServer(object):
         '''
         while 1:
             uid, addr = self.__listener.recvfrom(1024)
+            '''
             if int(uid not in self.__uid_dict) + \
                     len(self.__uid_dict) <= self.__max_user:
                 if self.__uid_dict[uid] < self.__qpd:
-                    if self.__count:
+                    if self.__count < self.__qps:
                         # 先减少后返回, 保证实际 qps 小于等于设定值
-                        self.__count -= 1
+                        self.__count += 1
                         self.__uid_dict[uid] += 1
-                        self.__listener.sendto('1', addr)  # 可以访问
+                        self.__listener.sendto('0', addr)  # 可以访问
                     else:
-                        self.__listener.sendto('0', addr)  # 不可访问
+                        self.__listener.sendto('1', addr)  # 每秒限制不可访问
                 else:
                     self.__listener.sendto('2', addr)  # 用户达到上限
             else:
                 self.__listener.sendto('3', addr)  # 达到用户流量控制上限
+            '''
+            if self.__count < self.__qps:
+                self.__count += 1
+                self.__listener.sendto('0', addr)
+            else:
+                self.__listener.sendto('1', addr)
 
     def run(self):
         '''开启的入口

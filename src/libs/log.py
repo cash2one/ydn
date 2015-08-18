@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 # -*- encoding: UTF-8 -*-
 import logging
+import logging.handlers
 import os
+import time
 
 import config
 
@@ -10,28 +12,68 @@ conf = config.get_config()
 has_inited = False
 __all__ = ['get_logger']
 
+class MultiProcessingTimedRotatingFileHandler(
+        logging.handlers.TimedRotatingFileHandler):
 
-def __init_file_handler(log_path, name):
-    filename = os.path.join(log_path, conf.get('log', name + '_file'))
-    file_handler = logging.FileHandler(filename, 'a')
-    file_handler.setLevel(logging.INFO)
-    file_handler.setFormatter(formatter)
-    logger = logging.getLogger(name)
-    logger.addHandler(file_handler)
-    logger.setLevel(logging.INFO)
+    def doRollover(self):
+        '''直接复制了 TimedRotatingFileHandler 中的函数,
+        修改了部分
+        '''
+        if self.stream:
+            self.stream.close()
+            self.stream = None
+        # get the time that this sequence started at and make it a TimeTuple
+        t = self.rolloverAt - self.interval
+        if self.utc:
+            timeTuple = time.gmtime(t)
+        else:
+            timeTuple = time.localtime(t)
+        dfn = self.baseFilename + "." + time.strftime(self.suffix, timeTuple)
+        if not os.path.exists(dfn):
+            os.rename(self.baseFilename, dfn)
+        if self.backupCount > 0:
+            # find the oldest log file and delete it
+            #s = glob.glob(self.baseFilename + ".20*")
+            #if len(s) > self.backupCount:
+            #    s.sort()
+            #    os.remove(s[0])
+            for s in self.getFilesToDelete():
+                os.remove(s)
+        #print "%s -> %s" % (self.baseFilename, dfn)
+        self.mode = 'a'
+        self.stream = self._open()
+        currentTime = int(time.time())
+        newRolloverAt = self.computeRollover(currentTime)
+        while newRolloverAt <= currentTime:
+            newRolloverAt = newRolloverAt + self.interval
+        #If DST changes and midnight or weekly rollover, adjust for this.
+        if (self.when == 'MIDNIGHT' or self.when.startswith('W')) and not self.utc:
+            dstNow = time.localtime(currentTime)[-1]
+            dstAtRollover = time.localtime(newRolloverAt)[-1]
+            if dstNow != dstAtRollover:
+                if not dstNow:  # DST kicks in before next rollover, so we need to deduct an hour
+                    newRolloverAt = newRolloverAt - 3600
+                else:           # DST bows out before next rollover, so we need to add an hour
+                    newRolloverAt = newRolloverAt + 3600
+        self.rolloverAt = newRolloverAt
+
 
 def __init_logger(log_path):
     global conf
 
     fmt = '%(levelname)s %(asctime)s %(filename)s|%(lineno)d\t%(message)s'
     formatter = logging.Formatter(fmt)
+    when = 'd'
+    interval = 1
+    backup_count = 0
     # requests
     requests_name = 'requests.packages.urllib3.connectionpool'
     requests_logger = logging.getLogger(requests_name)
     requests_logger.setLevel(logging.CRITICAL)
     # ad
     ad_filename = os.path.join(log_path, conf.get('log', 'ad_file'))
-    ad_file_handler = logging.FileHandler(ad_filename, 'a')
+    ad_file_handler = MultiProcessingTimedRotatingFileHandler(
+            ad_filename, when=when, interval=interval, backupCount=backup_count)
     ad_file_handler.setLevel(logging.INFO)
     ad_file_handler.setFormatter(formatter)
     ad_logger = logging.getLogger('ad')
@@ -39,7 +81,8 @@ def __init_logger(log_path):
     ad_logger.setLevel(logging.INFO)
     # cid
     cid_filename = os.path.join(log_path, conf.get('log', 'cid_file'))
-    cid_file_handler = logging.FileHandler(cid_filename, 'a')
+    cid_file_handler = MultiProcessingTimedRotatingFileHandler(
+            cid_filename, when=when, interval=interval, backupCount=backup_count)
     cid_file_handler.setLevel(logging.INFO)
     cid_file_handler.setFormatter(formatter)
     cid_logger = logging.getLogger('cid')
@@ -47,7 +90,8 @@ def __init_logger(log_path):
     cid_logger.setLevel(logging.INFO)
     # trace
     trace_filename = os.path.join(log_path, conf.get('log', 'trace_file'))
-    trace_file_handler = logging.FileHandler(trace_filename, 'a')
+    trace_file_handler = MultiProcessingTimedRotatingFileHandler(
+            trace_filename, when=when, interval=interval, backupCount=backup_count)
     trace_file_handler.setLevel(logging.INFO)
     trace_file_handler.setFormatter(formatter)
     trace_logger = logging.getLogger('trace')
@@ -55,7 +99,8 @@ def __init_logger(log_path):
     trace_logger.setLevel(logging.INFO)
     # root
     root_filename = os.path.join(log_path, conf.get('log', 'root_file'))
-    root_file_handler = logging.FileHandler(root_filename, 'a')
+    root_file_handler = MultiProcessingTimedRotatingFileHandler(
+            root_filename, when=when, interval=interval, backupCount=backup_count)
     root_file_handler.setLevel(logging.WARNING)
     root_file_handler.setFormatter(formatter)
     root_logger = logging.getLogger()

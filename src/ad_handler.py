@@ -97,10 +97,10 @@ class ADHandler(tornado.web.RequestHandler):
             errno = 1
         else:
             ret = self.__limit_permit(user_id)
-            if ret == 0:  # 不可访问
+            if ret == 1:  # 不可访问
                 errno = 4
                 msg = 'qps forbid'
-            elif ret == 1:  # 可以访问
+            elif ret == 0:  # 可以访问
                 try:
                     ad_data = ydn.request(ip, ua, category_id, limit, os)
                 except Exception as e:
@@ -113,12 +113,12 @@ class ADHandler(tornado.web.RequestHandler):
                     else:
                         msg = 'invalid response'
                         errno = 3
-            elif ret == 2:  # 用户达到上限
-                errno = 5
-                msg = 'user limit'
-            elif ret == 3:  # 达到用户流量上限
-                errno = 6
-                msg = 'user stream limit'
+#            elif ret == 2:  # 用户达到上限
+#                errno = 5
+#                msg = 'user limit'
+#            elif ret == 3:  # 达到用户流量上限
+#                errno = 6
+#                msg = 'user stream limit'
             else:
                 errno = 2
                 msg = 'unknown error'

@@ -37,7 +37,7 @@ def run_server():
     application = tornado.web.Application([
         (r"/ad", ad_handler.ADHandler),
         (r"/cid", cid_handler.CategoryHandler),
-        (r"/tr", trace_handler.TraceHandler),
+        (r"/trace", trace_handler.TraceHandler),
     ])
 
     config = libs.get_config()
