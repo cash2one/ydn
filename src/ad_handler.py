@@ -87,7 +87,7 @@ class ADHandler(tornado.web.RequestHandler):
         limit = int(limit)
         limit = min(self.__class__.__max_limit, limit)
 
-        ip = self.request.remote_ip
+        ip = self.request.headers.get('clientip', None)
         ua = self.request.headers.get('User-Agent', None)
         errno = 0  # 错误码
         msg = ''  # 错误信息

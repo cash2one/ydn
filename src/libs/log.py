@@ -63,7 +63,7 @@ def __init_logger(log_path):
 
     fmt = '%(levelname)s %(asctime)s %(filename)s|%(lineno)d\t%(message)s'
     formatter = logging.Formatter(fmt)
-    when = 'd'
+    when = 'MIDNIGHT'
     interval = 1
     backup_count = 0
     # requests
