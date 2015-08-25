@@ -113,12 +113,6 @@ class ADHandler(tornado.web.RequestHandler):
                     else:
                         msg = 'invalid response'
                         errno = 3
-#            elif ret == 2:  # 用户达到上限
-#                errno = 5
-#                msg = 'user limit'
-#            elif ret == 3:  # 达到用户流量上限
-#                errno = 6
-#                msg = 'user stream limit'
             else:
                 errno = 2
                 msg = 'unknown error'

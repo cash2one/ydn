@@ -117,10 +117,13 @@ def request(ip, ua, category_id, limit, os):
         raise Exception(info)
 
     text = response.text.encode("utf-8")
+    f = open("yahoo", "w")
+    f.write(text)
+    f.close()
     ad_data = parse_xml(text)
     return ad_data
 
 
 if __name__ == '__main__':
     ua = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.89 Safari/537.36'
-    print request(ua, '182.22.71.250', 'int_cat_70110110100', 1, 1)
+    print request(ua, '182.22.71.250', 'int_cat_60160130120', 10, 1)

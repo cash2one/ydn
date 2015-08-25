@@ -1,5 +1,6 @@
 import redis
 import sys
+import msgpack
 
 import libs
 
@@ -15,15 +16,20 @@ class KeywordMap(redis.StrictRedis):
         self.__super = super(KeywordMap, self)
         self.__super.__init__(host=host, port=port, db=db_index)
 
-    def set(self, key, value):
+    def set(self, key, data):
+        if data is None:
+            return None
+        value = msgpack.packb(data, use_bin_type=True)
         return self.__super.set(self.__prefix + key, value)
 
     def get(self, key):
-        return self.__super.get(self.__prefix + key)
+        value = self.__super.get(self.__prefix + key)
+        if value is not None:
+            value = msgpack.unpackb(value)
+        return value
 
 
 if __name__ == '__main__':
-    conf = libs.get_config()
     km = KeywordMap()
     for line in sys.stdin:
         line = line.strip()
