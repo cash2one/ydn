@@ -36,7 +36,7 @@ def import_to_mobile_core(filename):
             token, title, desc, icon, i_url, c_url = line.split("\t")
             ad = {
                 'url': c_url,
-                'desc': desc,
+                'description': desc,
                 'title': title,
                 'rank': None,
                 'sitehost': None,

@@ -2,15 +2,17 @@
 # -*- encoding: UTF-8 -*-
 import tornado.web
 
-import libs
-from keyword_map import KeywordMap
+from .. import libs
+from .. import ssp
+import define
 
 cid_logger = libs.get_logger('cid')
+__all__ = ['CategoryHandler']
 
 
-class CategoryHandler(tornado.web.RequestHandler):
+class CidHandler(tornado.web.RequestHandler):
 
-    __keyword_map = KeywordMap()
+    __ad_manager = ssp.AdManager()
 
     def __get_cid(self, keyword):
         '''依据输入的关键词返回映射的 Categroy ID.
@@ -21,7 +23,19 @@ class CategoryHandler(tornado.web.RequestHandler):
         返回:
             如果有映射关系, 返回 Category ID, 否则返回 None.
         '''
-        return self.__class__.__keyword_map.get(keyword)
+        token = None
+        try:
+            src, token = self.__class__.__ad_manager.get_src_token(
+                keyword, ssp.define.KEY_TYPE_WORD
+            )
+        except KeyError:
+            pass
+        else:
+            # 只要 YDN 的情况
+            if src != ssp.define.SRC_YDN:
+                token = None
+
+        return token
 
     def get(self):
         '''依据请求的关键词返回 Category ID.
@@ -40,11 +54,6 @@ class CategoryHandler(tornado.web.RequestHandler):
             'errno': 正整数错误码,
             'data': {'cid': Category ID},
         }
-
-        其中, 错误码包括:
-            0   正常返回
-            1   非法请求
-            2   内部错误
         '''
         global cid_logger
 
@@ -53,32 +62,24 @@ class CategoryHandler(tornado.web.RequestHandler):
         session_id = self.get_argument('sid', None)
         user_id = self.get_argument('uid', None)
 
-        errno = 0
-        msg = None
-        data = None
+        errno, msg, data = [None] * 3
         if None in (keyword, session_id, user_id):
-            errno = 1
-            msg = 'invalid params'
-            data = msg
+            errno = define.ERR_INVALID_PARAMS
+            msg = define.MSG_INVALID_PARAMS
         else:
-            try:
-                cid = self.__get_cid(keyword)
-            except Exception as e:
-                errno = 2
-                msg = str(e)
+            cid = self.__get_cid(keyword)
+            if cid is None:
+                errno = define.ERR_CID_NO_CATEGORY
+                msg = define.MSG_CID_NO_CATEGORY
             else:
-                if cid is None:
-                    errno = 2
-                    msg = 'no category'
-                    data = msg
-                else:
-                    errno = 0
-                    msg = cid
-                    data = {'cid': cid}
+                errno = define.ERR_SUCCESS
+                msg = cid
+                data = {'cid': cid}
 
+        ip = self.request.headers.get('clientip', None)
         log_string = ('ip={ip}\tkw={kw}\tuid={uid}\tsid={sid}\terrno={errno}\t'
                       'msg={msg}\trt={rt:.3f}').format(
-            ip=self.request.remote_ip,
+            ip=ip,
             kw=keyword.encode("utf-8"),
             uid=user_id,
             sid=session_id,

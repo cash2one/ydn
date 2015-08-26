@@ -9,10 +9,11 @@ class BaseSSP(object):
         self.os = os
         self.ip = ip
         self.ua = ua
+        print token, os, ip, ua
         # 用于返回数据
         self.ad = {
             'url': None,
-            'desc': None,
+            'description': None,
             'title': None,
             'rank': None,
             'sitehost': None,

@@ -51,7 +51,7 @@ class YdnSSP(base_ssp.BaseSSP):
         root = et.fromstring(text)
         listing = root[1][0]
         self.ad['url'] = listing[0].text
-        self.ad['desc'] = listing.attrib.get('description', None)
+        self.ad['description'] = listing.attrib.get('description', None)
         self.ad['title'] = listing.attrib.get('title', None)
         self.ad['rank'] = listing.attrib.get('rank', None)
         self.ad['sitehost'] = listing.attrib.get('siteHost', None)
@@ -59,3 +59,11 @@ class YdnSSP(base_ssp.BaseSSP):
 
     def run(self):
         return self.__request()
+
+
+if __name__ == '__main__':
+    ua = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.89 Safari/537.36'
+    ip = '182.22.71.250'
+    cid = 'int_cat_60160130120'
+    ssp = YdnSSP(cid, define.OS_IOS, ip, ua)
+    print ssp.get_ad()

@@ -24,10 +24,8 @@ import tornado.ioloop
 import tornado.web
 import tornado.httpserver
 
-import libs
-import ad_handler
-import cid_handler
-import trace_handler
+import api.libs
+import api.handlers
 
 
 def run_server():
@@ -35,13 +33,14 @@ def run_server():
     '''
     # 仅 2 个 URI
     application = tornado.web.Application([
-        (r"/ad", ad_handler.ADHandler),
-        (r"/cid", cid_handler.CategoryHandler),
-        (r"/trace", trace_handler.TraceHandler),
+        (r"/ad", api.handlers.AdHandler),
+        (r"/cid", api.handlers.CidHandler),
+        (r"/trace", api.handlers.TraceHandler),
+        (r"/predict", api.handlers.PredictHandler),
     ])
 
-    config = libs.get_config()
-    port = config.getint('ad_server', 'port')
+    config = api.libs.get_config()
+    port = config.getint('api_server', 'port')
     server = tornado.httpserver.HTTPServer(application)
     server.bind(port)
     # 多进程模式

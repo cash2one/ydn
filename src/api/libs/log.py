@@ -97,6 +97,15 @@ def __init_logger(log_path):
     trace_logger = logging.getLogger('trace')
     trace_logger.addHandler(trace_file_handler)
     trace_logger.setLevel(logging.INFO)
+    # predict
+    predict_filename = os.path.join(log_path, conf.get('log', 'predict_file'))
+    predict_file_handler = MultiProcessingTimedRotatingFileHandler(
+            predict_filename, when=when, interval=interval, backupCount=backup_count)
+    predict_file_handler.setLevel(logging.INFO)
+    predict_file_handler.setFormatter(formatter)
+    predict_logger = logging.getLogger('predict')
+    predict_logger.addHandler(predict_file_handler)
+    predict_logger.setLevel(logging.INFO)
     # root
     root_filename = os.path.join(log_path, conf.get('log', 'root_file'))
     root_file_handler = MultiProcessingTimedRotatingFileHandler(
@@ -113,7 +122,7 @@ def __init_all():
 
     abs_path = os.path.abspath(os.path.dirname(__file__))
     # 根目录
-    abs_root_path = os.path.join(abs_path, '../../')
+    abs_root_path = os.path.join(abs_path, '../../../')
     # log 目录
     log_path = conf.get('log', 'dir')
     log_path = os.path.join(abs_root_path, log_path)

@@ -55,9 +55,11 @@ class AdManager(object):
         return self.__dict.set(key, value)
 
     def get_ad(self, key, key_type, os, ip, ua):
-        ad = self.get(key, key_type)
-        src = ad['src']
-        token = ad['token']
+        try:
+            src, token = self.get_src_token(key, key_type)
+        except KeyError:
+            return None
+
         ssp = None
         if src == define.SRC_YDN:
             ssp = ydn_ssp.YdnSSP(token, os, ip, ua)
@@ -67,6 +69,15 @@ class AdManager(object):
             return None
 
         return ssp.get_ad()
+
+    def get_src_token(self, key, key_type):
+        ad = self.get(key, key_type)
+        if ad is None:
+            raise KeyError('key_not_exist')
+
+        src = ad['src']
+        token = ad['token']
+        return src, token
 
 
 if __name__ == '__main__':
